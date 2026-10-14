@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Annotated, Any
 
 from pyargprocessors import Process, find_processors, process, resolved_annotations
+from pyargprocessors import dataclass as processed_dataclass
 
 if TYPE_CHECKING:
     from decimal import Decimal
@@ -30,6 +31,12 @@ class Line:
     amount: Num = 1
 
 
+@processed_dataclass
+class ProcessedLine:
+    name: Text
+    amount: Num = 1
+
+
 class TestStringAnnotations:
     def test_module_level_names_are_resolved(self) -> None:
         assert order.__annotations__["name"] == "Text"
@@ -41,6 +48,9 @@ class TestStringAnnotations:
 
     def test_dataclass_fields(self) -> None:
         assert process(Line)(" Tea ", "2") == Line("tea", 2)
+
+    def test_processed_dataclass_fields(self) -> None:
+        assert ProcessedLine(" Tea ", "2") == ProcessedLine("tea", 2)
 
     def test_methods_and_string_return_types(self) -> None:
         class Shop:

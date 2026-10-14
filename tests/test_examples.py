@@ -1,6 +1,6 @@
 import pytest
 
-from examples import api, cli, form, rules, settings, validation
+from examples import api, cli, events, form, rules, settings, validation
 
 
 def test_form_example_runs(capsys: pytest.CaptureFixture[str]) -> None:
@@ -108,4 +108,20 @@ def test_rules_example_runs(capsys: pytest.CaptureFixture[str]) -> None:
             "invalid literal for int() with base 10: 'eighteen'"
         ),
         "InvalidProcessorError: 'rule bad' cannot process 'user': it is not passed as an argument",
+    ]
+
+
+def test_events_example_runs(capsys: pytest.CaptureFixture[str]) -> None:
+    events.main()
+
+    assert capsys.readouterr().out.splitlines() == [
+        "express to Damascus: 2 parcels, 1.55 kg",
+        "delivered, signed by Ada Lovelace",
+        "delivered, left at the door",
+        "Shipped True",
+        "Address(name='Ada Lovelace', city='Damascus', postcode='DM 101')",
+        "Parcel(reference='A-1', weight=Decimal('1.2'))",
+        "2026-10-14 True",
+        "parcels.weight: 'heavy' failed (InvalidOperation)",
+        "ValueError: promised for 11 Oct, before it was shipped",
     ]

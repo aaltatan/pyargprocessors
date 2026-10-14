@@ -11,6 +11,7 @@ A lightweight, typed Python library that does one thing: turn the **raw argument
 - `*args` and `**kwargs` are processed item by item
 - a failure says which argument and which value, and keeps the original exception
 - `@process` works on plain functions, methods and `async` functions, and `process(cls)` on classes, dataclasses and named tuples
+- `@dataclass` is `dataclasses.dataclass` whose class processes its own fields
 - a processor that raises is a validator
 - libraries that bind arguments themselves reuse the same two building blocks
 
@@ -144,6 +145,30 @@ Settings(database_url="sqlite://", port=9000)                # the class itself 
 ```
 
 It works the same for a plain class (`__init__`), a `NamedTuple` and a class that only defines `__new__`.
+
+### dataclass
+
+When the class itself should process its fields, use `pyargprocessors.dataclass` in place of `dataclasses.dataclass`. It takes the same options, with or without parentheses, and returns the class, not a factory:
+
+```python
+from pyargprocessors import Process, dataclass
+
+
+@dataclass(frozen=True, slots=True)
+class Settings:
+    database_url: Annotated[str, Process(str.strip)]
+    port: Annotated[int, Process(int)] = 8000
+
+
+Settings(database_url=" postgres://db ", port="8080")   # Settings(database_url='postgres://db', port=8080)
+isinstance(Settings(database_url="sqlite://"), Settings)   # True
+```
+
+- Only the generated `__init__` is processed, so `__post_init__` already sees the processed values.
+- A subclass decorated with `@dataclass` processes the fields it inherits too. A subclass made with `dataclasses.dataclass` processes nothing.
+- With `init=False` there is no `__init__` to process and the class is left as `dataclasses.dataclass` made it.
+- Type checkers treat it like `dataclasses.dataclass` (`dataclass_transform`).
+- A nested object needs no factory: the nested class is its own processor, see [`examples/events.py`](examples/events.py).
 
 ### Name it once, reuse it
 
@@ -320,6 +345,7 @@ name__eq("  Tea ")("tea")   # True, "  Tea " was processed once, when the rule w
 | Environment variables                          | A frozen, typed settings object                         | [`examples/settings.py`](examples/settings.py)                     |
 | `argv` words                                   | Commands that are plain typed functions                 | [`examples/cli.py`](examples/cli.py)                               |
 | A decoded JSON body, with nested objects       | An `async` handler with `UUID`, `datetime`, dataclasses | [`examples/api.py`](examples/api.py)                               |
+| Webhook JSON with a `type` and nested objects  | Real dataclass events to `match` on                     | [`examples/events.py`](examples/events.py)                         |
 | Functions your users register in your library  | Their arguments processed by your own binding           | [`examples/rules.py`](examples/rules.py)                           |
 | A query string (`parse_qs` gives lists)        | Single values, repeated values, paging, sorting         | [`tests/e2e/test_query_string.py`](tests/e2e/test_query_string.py) |
 | The lines of a CSV file                        | Typed rows, and the problems line by line               | [`tests/e2e/test_csv_import.py`](tests/e2e/test_csv_import.py)     |
@@ -393,6 +419,7 @@ Corners that are decided on purpose, each pinned by a test in [`tests/test_edge_
 | `@process` above `@lru_cache`                            | Works, and the cache key is the processed value: `"3"`, `3` and `" 3 "` share one entry.                                                                                                           |
 | A `functools.partial`                                    | What the partial already bound is a default, so it is not processed.                                                                                                                               |
 | A subclass overrides a processed method                  | The override is not processed unless it is decorated again.                                                                                                                                        |
+| `dataclasses.replace` on a `@dataclass` instance          | Every field goes through `__init__` again, so it is processed again: see "The value already has the wanted type".                                                                                 |
 | Recursion                                                | Every level processes its own arguments.                                                                                                                                                           |
 | `each` on a named tuple, an `OrderedDict`                | The result is a plain `tuple`, a plain `dict`.                                                                                                                                                     |
 | `each` on a string, a generator, a `deque`, a `range`    | Rejected with a `TypeError`.                                                                                                                                                                       |
@@ -464,6 +491,23 @@ Runnable examples live in [`examples/`](examples). Their exact output is checked
   uv run python -m examples.api
   ```
 
+- [`examples/events.py`](examples/events.py) — [`@dataclass`](#dataclass): a carrier's webhook JSON becomes typed tracking events. The classes process their own fields, nested ones included, then `__post_init__` checks across fields, `match` picks the event, and `dataclasses.replace` still works:
+
+  ```bash
+  uv run python -m examples.events
+  ```
+
+  ```python
+  @dataclass(frozen=True, kw_only=True)
+  class Shipped(Event):   # inherits processed `event_id: Id` and `at: Moment`
+      to: Annotated[Address, Process(nested(Address))]
+      parcels: Annotated[tuple[Parcel, ...], Process(each(nested(Parcel))), Process(tuple)]
+      ...
+
+
+  Shipped(**payload).to   # Address(name='Ada Lovelace', city='Damascus', postcode='DM 101')
+  ```
+
 - [`examples/rules.py`](examples/rules.py) — [building on top](#building-on-top): a tiny rules library with `find_processors(skip=1)`, `process_arguments` and `input_annotation`, compiling rules from JSON:
 
   ```bash
@@ -478,6 +522,7 @@ Runnable examples live in [`examples/`](examples). Their exact output is checked
 | ------------------------------------------- | --------- | ------------------------------------------------------------------------ |
 | `Process(fn)`                               | marker    | Apply `fn` to the value passed for a parameter                           |
 | `process`                                   | decorator | Apply the markers of a function, or of a constructor, on every call      |
+| `dataclass`                                 | decorator | `dataclasses.dataclass` whose `__init__` applies the markers of its fields |
 | `process_value(annotation, value, name=)`   | function  | Apply the markers of an annotation to one value                          |
 | `each(fn)`                                  | function  | A processor applying `fn` to each item of a collection                   |
 | `optional(fn)`                              | function  | A processor applying `fn` to every value except `None`                   |
