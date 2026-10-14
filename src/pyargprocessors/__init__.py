@@ -21,7 +21,7 @@ Libraries that bind arguments themselves build on `find_processors` and
 
 from .annotations import annotated_metadata, resolved_annotations
 from .combinators import each, optional
-from .decorators import process
+from .decorators import dataclass, process
 from .exceptions import InvalidProcessorError, ProcessArgumentError, PyargprocessorsError
 from .processors import (
     Process,
@@ -37,6 +37,7 @@ __all__ = [
     "ProcessArgumentError",
     "PyargprocessorsError",
     "annotated_metadata",
+    "dataclass",
     "each",
     "find_processors",
     "input_annotation",

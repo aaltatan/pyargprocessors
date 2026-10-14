@@ -7,6 +7,7 @@ and not an accident.
 
 import asyncio
 import copy
+import dataclasses
 import pickle
 from collections import OrderedDict, defaultdict, deque, namedtuple
 from collections.abc import Iterator
@@ -36,6 +37,7 @@ from pyargprocessors import (
     process_arguments,
     process_value,
 )
+from pyargprocessors import dataclass as processed_dataclass
 
 type Num = Annotated[int, Process(int)]
 type Text = Annotated[str, Process(str.strip), Process(str.lower)]
@@ -160,6 +162,18 @@ class TestUnusualValues:
         identifier = UUID(int=1)
 
         assert fn.__wrapped__(identifier) is identifier  # type: ignore[attr-defined]
+
+    def test_replace_on_a_processed_dataclass_processes_every_field_again(self) -> None:
+        @processed_dataclass
+        class Item:
+            name: Annotated[str, Process(str.strip)]
+            identifier: Annotated[UUID, Process(UUID)]
+            amount: Num = 1
+
+        item = Item(" Tea ", str(UUID(int=1)))
+
+        with pytest.raises(ProcessArgumentError, match="Argument 'identifier'"):
+            dataclasses.replace(item, amount="3")
 
     def test_the_result_is_not_checked_against_the_annotation(self) -> None:
         assert process_value(Annotated[int, Process(str)], 5) == "5"
