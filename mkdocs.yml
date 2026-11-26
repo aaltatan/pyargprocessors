@@ -1,0 +1,86 @@
+site_name: pyargprocessors
+site_description: Turn the raw arguments a function receives into the objects it wants, with a Process marker next to the parameter.
+site_url: https://aaltatan.github.io/pyargprocessors/
+repo_url: https://github.com/aaltatan/pyargprocessors
+repo_name: aaltatan/pyargprocessors
+edit_uri: edit/main/docs/
+copyright: GPL-3.0-only
+
+theme:
+  name: material
+  icon:
+    logo: material/filter-variant
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: teal
+      accent: amber
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: teal
+      accent: amber
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - navigation.instant
+    - navigation.tabs
+    - navigation.sections
+    - navigation.top
+    - navigation.footer
+    - navigation.indexes
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+    - content.code.annotate
+    - content.tabs.link
+    - content.action.edit
+    - toc.follow
+
+nav:
+  - Home: index.md
+  - Installation: install.md
+  - User guide:
+      - guide/index.md
+      - Process and @process: guide/process.md
+      - Processed types: guide/types.md
+      - each and optional: guide/combinators.md
+      - Classes and dataclasses: guide/classes.md
+      - Validation: guide/validation.md
+      - Errors: guide/errors.md
+      - Building on top: guide/building-on-top.md
+  - Recipes: recipes.md
+  - Reference:
+      - reference/index.md
+      - API: reference/api.md
+      - Exceptions: reference/exceptions.md
+      - Behaviour corners: reference/behaviour.md
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - md_in_html
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.details
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.tabbed:
+      alternate_style: true
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/aaltatan/pyargprocessors
+    - icon: fontawesome/brands/python
+      link: https://pypi.org/project/pyargprocessors/
